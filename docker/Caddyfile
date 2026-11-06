@@ -1,0 +1,4 @@
+{$DOMAIN} {
+    encode zstd gzip
+    reverse_proxy tourism:8080
+}

@@ -1,0 +1,16 @@
+{
+  "name": "tourism-planning",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A portable, vibe-coding-first collection of travel plans",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "node scripts/build.mjs",
+    "preview": "node scripts/serve.mjs",
+    "plan:create": "node scripts/create-plan.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "check": "npm test && npm run build"
+  }
+}

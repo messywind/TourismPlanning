@@ -1,0 +1,30 @@
+name: Check & container smoke test
+on: [push, pull_request]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm run check
+      - run: docker compose config --quiet
+      - run: docker build -t tourism-planning:test .
+      - name: Start immutable container
+        run: docker run -d --name tourism-test --read-only --tmpfs /tmp:size=64m,mode=1777 --cap-drop ALL --security-opt no-new-privileges:true -p 127.0.0.1:8080:8080 tourism-planning:test
+      - name: Smoke test
+        run: |
+          for i in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8080/healthz; then break; fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:8080/healthz
+          curl --fail --silent http://127.0.0.1:8080/ > /tmp/home.html
+          curl --fail --silent http://127.0.0.1:8080/plans.json > /tmp/plans.json
+          node -e "const p=require('/tmp/plans.json'); if (!p.plans.length || p.plans.some(x=>x.status!=='ready')) process.exit(1)"
+          curl --fail --silent http://127.0.0.1:8080/plans/chengdu-2026-11-11/ > /tmp/plan.html
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/plans/chengdu-2026-11-11/notes/brief.md)" = 404
+      - name: Container logs
+        if: always()
+        run: docker logs tourism-test || true
